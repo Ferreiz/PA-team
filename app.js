@@ -197,35 +197,34 @@ app.get("/attendance", requireAuth, (req, res) => {
   });
 });
 
-// ON / OFF DUTY - PHIÊN BẢN CHUẨN NHẤT 2025 (≥1 tiếng mới tính lương)
+// ON / OFF DUTY - PHIÊN BẢN HOÀN HẢO 2025 (ĐÃ FIX 100% LỖI)
 app.post("/attendance/check", requireAuth, (req, res) => {
   const db = loadDB();
   const user = db.users.find(u => u.id === req.session.user.id);
-  if (!user) return res.status(403).send("Unauthorized");
+  if (!user) return res.redirect("/index.html");
 
   const now = new Date();
-  const today = now.toLocaleDateString('vi-VN'); // vd: 19/11/2025
+  const today = now.toLocaleDateString('vi-VN'); // 26/11/2025
   const time = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const dayMonth = today.split('/').slice(0, 2).join('/'); // 19/11
+  const dayMonth = today.split('/').slice(0, 2).join('/');
 
-  // Đảm bảo dữ liệu sạch
+  // Đảm bảo dữ liệu
   user.attendance = user.attendance || [];
   user.monthlyHistory = user.monthlyHistory || [];
   user.careerTotal = Number(user.careerTotal) || 0;
   user.salaryRate = Number(user.salaryRate) || 10714;
 
   const todayRecords = user.attendance.filter(a => a.date === today);
-
-  // Tính tổng giờ đã HOÀN THÀNH (chỉ tính ca đã off và có giờ hợp lệ)
-  const completedHoursToday = todayRecords
-    .filter(r => r.offTime && typeof r.hours === 'number' && r.hours > 0)
-    .reduce((sum, r) => sum + r.hours, 0);
-
   const activeSession = todayRecords.find(r => !r.offTime);
 
+  // Tính giờ đã hoàn thành hôm nay (chỉ tính ca đã Off + có lương)
+  const completedHoursToday = todayRecords
+    .filter(r => r.offTime && r.hours > 0)
+    .reduce((sum, r) => sum + r.hours, 0);
+
   if (activeSession) {
-    // ====================== OFF DUTY ======================
-    const onTimeStr = activeSession.onTime.split(' - ')[0]; // "14:30:25"
+    // === OFF DUTY ===
+    const onTimeStr = activeSession.onTime.split(' - ')[0];
     const [d, m, y] = today.split('/');
     const onDateTime = new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')} ${onTimeStr}`);
 
@@ -233,48 +232,49 @@ app.post("/attendance/check", requireAuth, (req, res) => {
       return res.redirect("/attendance");
     }
 
-    const elapsedHours = (now - onDateTime) / (1000 * 60 * 60); // giờ thực làm
+    const elapsedHours = (now - onDateTime) / (1000 * 60 * 60);
+    let finalHours = 0;
+    let salaryEarned = 0;
+    let statusText = "Dưới 1 tiếng - Không lương";
 
-    // CHỈ TÍNH NẾU LÀM ĐỦ ÍT NHẤT 1 TIẾNG (60 phút)
-    if (elapsedHours < 1) {
-      // Không tính lương, chỉ đóng ca (tránh spam)
-      activeSession.offTime = `${time} - ${dayMonth}`;
-      activeSession.hours = 0;
-      activeSession.salary = 0;
-    } else {
-      // Tính giờ được cộng (tối đa còn lại trong ngày)
-      const maxCanAdd = 4 - completedHoursToday;
-      const hoursToAdd = Math.min(elapsedHours, maxCanAdd); // không vượt 4h/ngày
-      const finalHours = Math.floor(hoursToAdd * 100) / 100; // làm tròn 2 chữ số
-      const salaryEarned = Math.round(finalHours * user.salaryRate * 100) / 100;
+    if (elapsedHours >= 1) {
+      const maxCanAdd = Math.max(0, 4 - completedHoursToday);
+      finalHours = Math.min(elapsedHours, maxCanAdd);
+      finalHours = Math.round(finalHours * 100) / 100;
+      salaryEarned = Math.round(finalHours * user.salaryRate * 100) / 100;
 
-      // Cập nhật ca
-      activeSession.offTime = `${time} - ${dayMonth}`;
-      activeSession.hours = finalHours;
-      activeSession.salary = salaryEarned;
-      activeSession.status = finalHours >= maxCanAdd ? "Đủ 4 giờ hôm nay" : "Hoàn thành ca";
-
-      // Cộng tổng thu nhập sự nghiệp
-      user.careerTotal = Math.round((user.careerTotal + salaryEarned) * 100) / 100;
-
-      // Cập nhật lịch sử tháng
-      const monthKey = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-      let monthData = user.monthlyHistory.find(h => h.month === monthKey);
-      if (!monthData) {
-        monthData = { month: monthKey, hours: 0, salary: 0 };
-        user.monthlyHistory.unshift(monthData);
+      if (finalHours >= maxCanAdd && maxCanAdd > 0) {
+        statusText = "Đủ 4 giờ hôm nay";
+      } else {
+        statusText = "Hoàn thành ca";
       }
-      monthData.hours = Math.round((monthData.hours + finalHours) * 100) / 100;
-      monthData.salary = Math.round((monthData.salary + salaryEarned) * 100) / 100;
     }
 
+    // Cập nhật ca hiện tại
+    activeSession.offTime = `${time} - ${dayMonth}`;
+    activeSession.hours = finalHours;
+    activeSession.salary = salaryEarned;
+    activeSession.status = statusText; // QUAN TRỌNG: cập nhật status
+
+    // Cộng lương sự nghiệp
+    user.careerTotal = Math.round((user.careerTotal + salaryEarned) * 100) / 100;
+
+    // Cập nhật lương tháng
+    const monthKey = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    let monthData = user.monthlyHistory.find(h => h.month === monthKey);
+    if (!monthData) {
+      monthData = { month: monthKey, hours: 0, salary: 0 };
+      user.monthlyHistory.unshift(monthData);
+    }
+    monthData.hours = Math.round((monthData.hours + finalHours) * 100) / 100;
+    monthData.salary = Math.round((monthData.salary + salaryEarned) * 100) / 100;
+
   } else {
-    // ====================== ON DUTY ======================
+    // === ON DUTY ===
     if (completedHoursToday >= 4) {
       return res.redirect("/attendance?error=max_hours");
     }
 
-    // Tạo ca mới
     user.attendance.push({
       date: today,
       onTime: `${time} - ${dayMonth}`,
@@ -286,7 +286,7 @@ app.post("/attendance/check", requireAuth, (req, res) => {
   }
 
   saveDB(db);
-  res.redirect("/attendance");
+  res.redirect("/attendance?success=" + (activeSession ? "off" : "on"));
 });
 
 // Đăng ký người dùng (Admin)
