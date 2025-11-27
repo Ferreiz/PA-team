@@ -134,7 +134,27 @@
                                     <td><%= a.offTime || 'Đang Làm Việc' %></td>
                                     <td><%= (a.hours || 0).toFixed(2) %></td>
                                     <td><%= (a.salary || 0).toLocaleString() %>$</td>
-                                    <td><span class="bg-danger p-1 text-white" style="border-radius: 8px;"><%= a.status %></span></td>
+                                    <td>
+                                    <% 
+                                        let statusClass = 'bg-secondary text-white';
+                                        let statusText = a.status || 'Chưa xác định';
+
+                                        if (!a.offTime) {
+                                        statusClass = 'bg-warning text-dark fw-bold';
+                                        statusText = 'Đang làm việc';
+                                        } else if (a.status === 'Đủ 4 giờ hôm nay') {
+                                        statusClass = 'bg-success text-white';
+                                        } else if (a.hours >= 1) {
+                                        statusClass = 'bg-primary text-white';
+                                        } else if (a.hours > 0) {
+                                        statusClass = 'bg-danger text-white';
+                                        statusText = 'Dưới 1 tiếng - Không lương';
+                                        }
+                                    %>
+                                    <span class="px-3 py-2 rounded-pill <%= statusClass %>" style="font-size: 0.85rem;">
+                                        <%= statusText %>
+                                    </span>
+                                </td>
                                 </tr>
                             <% }); %>
                             <tr class="total-day-timekeeping">
@@ -166,45 +186,52 @@
 
     <!-- Thông báo flash -->
     <div class="notifications">
-        <span id="session-success" data-message="<%= success || '' %>"></span>
-        <span id="session-error" data-message="<%= error || '' %>"></span>
+        <span id="session-success"></span>
+        <span id="session-error"></span>
     </div>
 
     <!-- Đoạn script QUAN TRỌNG NHẤT - FIX LỖI "Đang Làm Việc" MÃI MÃI -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const successMsg = document.getElementById('session-success')?.dataset.message || '';
-            const errorMsg   = document.getElementById('session-error')?.dataset.message || '';
+  document.addEventListener('DOMContentLoaded', function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
 
-            // Khi vừa On hoặc Off Duty thành công → hiện thông báo đẹp + reload trang
-            if (successMsg) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Thành công!',
-                    text: successMsg,
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => {
-                    window.location.reload();  // Đây là dòng QUAN TRỌNG NHẤT - cập nhật lại dữ liệu mới nhất
-                });
-            }
+    if (success === 'on') {
+      Swal.fire({
+        icon: 'success',
+        title: 'On-Duty thành công!',
+        text: 'Bạn đã bắt đầu ca làm việc',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } else if (success === 'off') {
+      Swal.fire({
+        icon: 'success',
+        title: 'Off-Duty thành công!',
+        text: 'Ca làm việc đã kết thúc',
+        timer: 2000,
+        showConfirmButton: false
+      }).then(() => {
+        window.location.href = "/attendance"; // Reload sạch
+      });
+    }
 
-            if (errorMsg) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Lỗi',
-                    text: errorMsg,
-                    confirmButtonText: 'OK'
-                });
-            }
+    if (urlParams.get('error') === 'max_hours') {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Đã đủ giờ!',
+        text: 'Bạn đã làm đủ 4 giờ hôm nay',
+        confirmButtonText: 'OK'
+      });
+    }
 
-            // Nếu người dùng bấm nút On/Off Duty → hiện loading
-            document.getElementById('dutyForm')?.addEventListener('submit', function() {
-                document.getElementById('loadingOverlay').style.display = 'flex';
-            });
-        });
-    </script>
+    // Loading khi bấm nút
+    document.querySelector('form')?.addEventListener('submit', function() {
+      document.getElementById('loadingOverlay').style.display = 'flex';
+    });
+  });
+</script>
 
     <!-- Các script còn lại giữ nguyên -->
     <script src="https://www.lssdhrtime.com/assets/js/loading.js"></script>
