@@ -77,12 +77,53 @@
       "role": "admin",
       "displayName": "God Her",
       "position": "Thượng Sĩ",
-      "rank": "Trưởng Phòngc",
-      "avatar": "https://ui-avatars.com/api/?name=Haicoo&background=random",
+      "rank": "Trưởng Phòng",
+      "avatar": "https://ui-avatars.com/api/?name=&background=random",
       "salaryRate": 18000,
       "careerTotal": 0,
       "attendance": [],
       "monthlyHistory": []
     }
+    {
+     "id": 7,
+      "username": "lilcubo",
+      "password": "123",
+      "role": "user",
+      "displayName": "Lil Cubo",
+      "position": "Thượng Sĩ",
+      "rank": "Phó Phòng",
+      "avatar": "https://ui-avatars.com/api/?name=lc&background=random",
+      "salaryRate": 14500,
+      "careerTotal": 0,
+      "attendance": [],
+      "monthlyHistory": []
+    {
+    }
+      "id": 8,
+      "username": "namkayoo",
+      "password": "123",
+      "role": "user",
+      "displayName": "Nam Kayo",
+      "position": "Thượng Sĩ",
+      "rank": "Phó Phòng",
+      "avatar": "https://ui-avatars.com/api/?name=nk&background=random",
+      "salaryRate": 14500,
+      "careerTotal": 0,
+      "attendance": [],
+      "monthlyHistory": []
+  {
+  }
+    "id": 9,
+      "username": "lilbaron",
+      "password": "123",
+      "role": "user",
+      "displayName": "Lil Baron",
+      "position": "Thượng Sĩ",
+      "rank": "Trưởng Phòng",
+      "avatar": "https://ui-avatars.com/api/?name=lb&background=random",
+      "salaryRate": 18000,
+      "careerTotal": 0,
+      "attendance": [],
+      "monthlyHistory": []
   ]
 }
