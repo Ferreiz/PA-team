@@ -83,7 +83,7 @@
       "careerTotal": 0,
       "attendance": [],
       "monthlyHistory": []
-    }
+    },
     {
      "id": 7,
       "username": "lilcubo",
@@ -97,7 +97,7 @@
       "careerTotal": 0,
       "attendance": [],
       "monthlyHistory": []
-    {
+    {,
     }
       "id": 8,
       "username": "namkayoo",
@@ -111,8 +111,8 @@
       "careerTotal": 0,
       "attendance": [],
       "monthlyHistory": []
-  {
-  }
+   {,
+   }
     "id": 9,
       "username": "lilbaron",
       "password": "123",
@@ -125,6 +125,6 @@
       "careerTotal": 0,
       "attendance": [],
       "monthlyHistory": []
-   {
+    },
   ]
 }
