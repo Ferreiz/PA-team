@@ -203,8 +203,11 @@ app.post("/attendance/check", requireAuth, (req, res) => {
   if (!user) return res.redirect("/index.html");
 
   const now = new Date();
-  const today = now.toLocaleDateString('vi-VN'); // 26/11/2025
-  const time = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const vietnamOffset = 7 * 60; // GMT+7 tính bằng phút
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const a = new Date(utc + (vietnamOffset * 60000));
+  const today = a.toLocaleDateString('vi-VN'); // 26/11/2025
+  const time = a.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const dayMonth = today.split('/').slice(0, 2).join('/');
 
   // Đảm bảo dữ liệu
